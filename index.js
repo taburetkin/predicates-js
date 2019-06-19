@@ -13,9 +13,9 @@ export function sqParse(data, options) {
 }
 
 export function sqFilter(data, options) {
-	let sqg = sq(data, options);
-	if (!sqg) return () => false;
-	return model => sqg.filter(model);
+	let grp = sqParse(data, options);
+	if (!grp) return () => false;
+	return model => grp.filter(model);
 }
 
 
