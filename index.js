@@ -2,7 +2,7 @@ import config from './config';
 import SqDialect from './SqDialect';
 import SqGroup from './SqGroup';
 import SqItem from './SqItem';
-import SqItemValue from './SqItem';
+import SqItemValue from './SqItemValue';
 import SqOperator from './SqOperator';
 
 export { tabulate } from './helpers';
