@@ -55,12 +55,12 @@ var predicatesJs = (function (exports) {
 			let options = { sign, prefix, separator, postfix };
 			merge(this, options, force);
 
-			if (Object.hasOwnProperty(another, 'toString')) {
-				this._bind('toString', toString);
+			if (another.hasOwnProperty('toString')) {
+				this._bind('toString', another.toString);
 			}
 
-			if (Object.hasOwnProperty(another, 'filter')) {
-				this._bind('filter', filter);
+			if (another.hasOwnProperty('filter')) {
+				this._bind('filter', another.filter);
 			}
 		}
 
@@ -681,6 +681,23 @@ var predicatesJs = (function (exports) {
 			return result;
 		}
 
+
+		_join(arg, isAny) {
+			if (this.isAny === isAny) {
+				let items = this._normalizeItems(arg);
+				this.items.push(items);
+			} else {
+				let opts = Object.assign({}, this.options, { isAny });
+				return SqGroup.parse([arg, this], opts);
+			}
+		}
+
+		or(arg) {
+			return this._join(arg, true);
+		}
+		and(arg) {
+			return this._join(arg, false);
+		}
 
 		static parse(val, options = {}) {
 			let { dialect = config.defaultDialect } = options;
