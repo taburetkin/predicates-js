@@ -118,6 +118,23 @@ class SqGroup {
 	}
 
 
+	_join(arg, isAny) {
+		if (this.isAny === isAny) {
+			let items = this._normalizeItems(arg);
+			this.items.push(items);
+		} else {
+			let opts = Object.assign({}, this.options, { isAny });
+			return SqGroup.parse([arg, this], opts);
+		}
+	}
+
+	or(arg) {
+		return this._join(arg, true);
+	}
+	and(arg) {
+		return this._join(arg, false);
+	}
+
 	static parse(val, options = {}) {
 		let { dialect = config.defaultDialect } = options;
 		//console.log('dialect', dialect);

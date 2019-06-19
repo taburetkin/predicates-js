@@ -20,12 +20,12 @@ class SqOperator {
 		let options = { sign, prefix, separator, postfix };
 		merge(this, options, force);
 
-		if (Object.hasOwnProperty(another, 'toString')) {
-			this._bind('toString', toString);
+		if (another.hasOwnProperty('toString')) {
+			this._bind('toString', another.toString);
 		}
 
-		if (Object.hasOwnProperty(another, 'filter')) {
-			this._bind('filter', filter);
+		if (another.hasOwnProperty('filter')) {
+			this._bind('filter', another.filter);
 		}
 	}
 
