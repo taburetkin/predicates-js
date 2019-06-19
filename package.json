@@ -1,0 +1,15 @@
+{
+  "name": "predicates-js",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "dimtabu <dima.taburetkin@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "start": "nodemon -r esm -r module-alias/register index.js"
+  },
+  "devDependencies": {
+    "esm": "^3.2.25",
+    "module-alias": "^2.2.0",
+    "nodemon": "^1.19.1"
+  }  
+}
