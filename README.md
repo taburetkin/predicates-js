@@ -132,4 +132,5 @@ there are predefined dialect operators:
 
 ## Looking for help
 This lib is under construction and there is a lot of things should be done and maybe some refactoring too but the concept is ready.  
-Feel free to join and help to develop, especially in `documentation` and `tests`.
+Feel free to join and help to develop, especially in `documentation` and `tests`.  
+The further tests will be written in mocha chai stack.
