@@ -105,6 +105,13 @@ class SqGroup {
 		}
 	}
 
+	toSql(options = {}) {
+		!options.params && (options.params = []);
+		let values = options.params;
+		let text = this.toString(options);
+		return { text, values };
+	}
+
 	filter(model, options) {
 		let result = false;
 		for (let x =0; x < this.items.length; x++) {
@@ -184,6 +191,17 @@ class SqGroup {
 
 	}
 
+	static filter(data, options = {}) {
+		let sq = this.parse(data, options);
+		if (!sq) {
+			if (options.throwError !== false) {
+				return () => true;
+			} else {
+				throw new Error('Unable to parse SqGroup from provided data');
+			}
+		}		
+		return model => sq.filter(model, options.filterOptions);
+	}
 
 }
 
