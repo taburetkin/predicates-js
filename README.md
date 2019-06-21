@@ -1,4 +1,4 @@
-# predicate-js
+# predicate-js - (not stable yet)
 Was designed to be used with front-end array filter and for creating database predicates from universal data type.
 
 
@@ -37,7 +37,7 @@ predicates-js may supports different t-sql dialects, the default one is postgres
 If you need another you have to describe it by your self
 
 ## Complex queries
-The main thing of predicate-js is tha you can build a query with any kind of complexity, combining `and` and `or`
+The main thing of predicate-js is that you can build a query with any kind of complexity, combining `and` and `or`
 
 ```js
 
@@ -66,24 +66,24 @@ gender = 'male'
 
 ## The query structure
 The query consist of 4 elements
-1. SqGroup - the group of SqItem values combined with one bitwise operator
-2. SqItem - holds left SqItemValue, right SqItemValue and SqOperator
-3. SqItemValue - holds value and value definition (reference or provided argument)
-4. SqOperator - holds instruction about what to do with left and right values.
+1. `SqGroup` - the group of SqItem values combined with one bitwise operator
+2. `SqItem` - holds left SqItemValue, right SqItemValue and SqOperator
+3. `SqItemValue` - holds value and value definition (reference or provided argument)
+4. `SqOperator` - holds instructions about what to do with left and right values.
 
 the query can be written in Json like this
 ```
 {
-	"any":[
-		{
-			"every":[
-				['[age]', 18, 'greaterOrEqual'],
-				['[age]', 35, 'less'],
-				['[gender]', 'female'], // the default operation is equal and third argument may be skipped
-			]
-		},
-		['[gender]', 'male']
-	]
+   "any":[
+      {
+         "every":[
+            ['[age]', 18, 'greaterOrEqual'],
+            ['[age]', 35, 'less'],
+            ['[gender]', 'female'], // the default operation is equal and third argument may be skipped
+         ]
+      },
+      ['[gender]', 'male']
+   ]
 }
 ```
 The example above contains value like `[age]`, this is dialect specific indicator that the value is actually a reference. This can be redefined in dialect itself.
@@ -94,6 +94,21 @@ For comparing with both reference value:
 SqGroup.parse({ foo: '[bar]'});
 ```
 The left side is reference by default and for the right side we should provide dialect specific reference indicator.
+
+## transfering between fronend and backend
+```js
+// client side
+const search = SqGroup.parse({ foo: 'bar' });
+post('/someurl', search.toJSON());
+
+
+//servier side
+app.post('/someurl', (req, res) => {
+   const search = SqGroup.parse(req.body);
+});
+
+```
+
 
 ## Operators
 there are predefined dialect operators:
