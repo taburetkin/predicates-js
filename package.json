@@ -7,7 +7,8 @@
   "scripts": {
     "start": "nodemon -r esm -r module-alias/register index.js",
     "test-w": "mocha -w --config ./test/.mocharc.json",
-    "test": "mocha --config ./test/.mocharc.json"
+    "test": "mocha --config ./test/.mocharc.json",
+    "build": "rollup -c rollup.config.js"
   },
   "devDependencies": {
     "chai": "^4.2.0",

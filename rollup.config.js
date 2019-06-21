@@ -13,5 +13,13 @@ module.exports = [
       format: 'iife',
       name: 'predicatesJs'
     }
+  },
+  {
+    input: 'index.js',
+    output: {
+      file: 'browser/predicates.umd.js',
+      format: 'umd',
+      name: 'predicatesJs'
+    }
   }
 ];
