@@ -1,16 +1,22 @@
 {
   "name": "predicates-js",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "main": "index.js",
   "author": "dimtabu <dima.taburetkin@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "start": "nodemon -r esm -r module-alias/register index.js"
+    "start": "nodemon -r esm -r module-alias/register index.js",
+    "test-w": "mocha -w --config ./test/.mocharc.json",
+    "test": "mocha --config ./test/.mocharc.json"
   },
   "devDependencies": {
+    "chai": "^4.2.0",
     "esm": "^3.2.25",
+    "mocha": "^6.1.4",
     "module-alias": "^2.2.0",
     "nodemon": "^1.19.1",
-    "rollup": "^1.15.6"
+    "rollup": "^1.15.6",
+    "sinon": "^7.3.2",
+    "sinon-chai": "^3.3.0"
   }
 }

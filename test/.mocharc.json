@@ -1,0 +1,9 @@
+{
+	"checkLeaks": true,
+	"file": "./test/setup.node.js",
+	"recursive": true,
+	"reporter": "dot",
+	"require": "esm",
+	"spec": "./test/unit/",
+	"ui": "bdd"
+}
