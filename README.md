@@ -1,4 +1,4 @@
-# predicate-js - (not stable yet)
+# predicates-js - (not stable yet)
 Was designed to be used with front-end array filter and for creating database predicates from universal data type.
 
 
@@ -23,7 +23,6 @@ let sql = "SELECT * from Users";
 let where = SqGroup.parse({ id: 2 }).toSql();
 sql += ' where ' + where.text;
 
-//
 // sql: SELECT * from Users where id = $1
 // where.values - holds the array of query parameters
 // sends parametriezed query, assume that database is your some database framework, f.e. pg
@@ -34,10 +33,10 @@ database.query(sql, where.values);
 
 ## Dialects
 predicates-js may supports different t-sql dialects, the default one is postgres.
-If you need another you have to describe it by your self
+If you need another you have to describe it by yourself.
 
 ## Complex queries
-The main thing of predicate-js is that you can build a query with any kind of complexity, combining `and` and `or`
+The main thing of predicates-js is that you can build a query with any kind of complexity, combining `and` and `or`
 
 ```js
 
@@ -54,7 +53,7 @@ let text = where.toString({ inlineValues: true });
 	and
 	age < 35
 	and
-	gender = 'female
+	gender = 'female'
 )
 or
 gender = 'male'
@@ -66,7 +65,7 @@ gender = 'male'
 
 ## The query structure
 The query consist of 4 elements
-1. `SqGroup` - the group of SqItem values combined with one bitwise operator
+1. `SqGroup` - the group of SqItem values or nested SqGroups combined with one bitwise operator
 2. `SqItem` - holds left SqItemValue, right SqItemValue and SqOperator
 3. `SqItemValue` - holds value and value definition (reference or provided argument)
 4. `SqOperator` - holds instructions about what to do with left and right values.
@@ -86,16 +85,23 @@ the query can be written in Json like this
    ]
 }
 ```
-The example above contains value like `[age]`, this is dialect specific indicator that the value is actually a reference. This can be redefined in dialect itself.
+The example above contains values like `[age]`, this is dialect specific indicator that the value is actually a reference. This can be redefined in dialect itself.
 The default dialect treat left values as reference values.  
 
 For comparing with both reference value:
 ```js
-SqGroup.parse({ foo: '[bar]'});
+let data = {
+  { foo: 'foo1', bar: 'bar1' },
+  { foo: 'foo2', bar: 'bar2' },
+  { foo: 'xxx', bar: 'xxx' },
+}
+let found = data.items(SqGroup.filter({ foo: '[bar]'}));
+// will looks for items where item.foo == item.bar
+// found is : [{ foo: 'xxx', bar: 'xxx' }]
 ```
-The left side is reference by default and for the right side we should provide dialect specific reference indicator.
+The left side is reference by default and for the right side we should provide dialect specific reference indicator. in default dialect its a `[]`
 
-## transfering between fronend and backend
+## transfering between frontend and backend
 ```js
 // client side
 const search = SqGroup.parse({ foo: 'bar' });
@@ -112,7 +118,7 @@ app.post('/someurl', (req, res) => {
 
 ## Operators
 there are predefined dialect operators:
-- `'equal'`,
+- `'equal'` - default and can be omited,
 - `'notEqual'`,
 - `'greater'`,
 - `'greaterOrEqual'`,
