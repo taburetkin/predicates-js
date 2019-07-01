@@ -2,53 +2,22 @@ import SqOperator from './SqOperator';
 import { tabulate } from './helpers';
 
 class SqDialect {
-  constructor({ operators, operatorsOptions } = {}) {
-    this._initializeReferencePattern();
+  constructor(options = {}) {
+
+    let { operators, operatorsOptions, toStringOptions } = options;
+    // initializing operators
     this._initializeOperators(operators, operatorsOptions);
-  }
 
-  _initializeOperators(operators, { replaceAll, merge = true } = {}) {
-    let rawOperators = replaceAll ? operators : this.operators;
-    this.operators = this._buildOperators(rawOperators);
-    if (replaceAll) return;
+    //initializing toString options
+    this.toStringOptions = Object.assign({}, this.toStringOptions, toStringOptions);
 
-    let newOps = this._buildOperators(operators);
-    newOps &&
-      Object.keys(newOps).forEach(key => {
-        let newOp = newOps[key];
-        let existOp = this.operators[key];
-        if (!existOp || !merge) {
-          this.operators[key] = newOp;
-        } else if (existOp) {
-          this._mergeOperators(existOp, newOp);
-        }
-      });
-  }
+    //initializing reference pattern
+    this._initializeReferencePattern();
 
-  _mergeOperators(operator, another) {
-    operator.update(another);
-  }
-
-  _buildOperators(operators) {
-    if (typeof operators !== 'object') return;
-    return Object.keys(operators).reduce((memo, key) => {
-      let raw = operators[key];
-      let operator;
-      if (raw instanceof SqOperator) {
-        operator = raw;
-      } else {
-        operator = new SqOperator(raw);
-      }
-      if (!operator.id) {
-        operator.id = key;
-      }
-      memo[operator.id] = operator;
-      return memo;
-    }, {});
   }
 
   _initializeReferencePattern() {
-    if (this.toStringOptions.referencePattern) {
+    if (this.toStringOptions.referencePattern instanceof RegExp) {
       return;
     }
 
@@ -67,18 +36,90 @@ class SqDialect {
     this.toStringOptions.referencePattern = pattern;
   }
 
+  //#region Operators
+
+  _initializeOperators(operators, { replaceAll, merge = true } = {}) {
+    // in case of not replacing we will process default operators first.
+    let rawOperators = replaceAll ? operators : this.defaultOperators;
+    this.operators = this._buildOperators(rawOperators);
+
+    // if we are replacing all our operators ready and we may leave.
+    if (replaceAll) return;
+
+    // processing given operators
+    let newOps = this._buildOperators(operators);
+    newOps &&
+      Object.keys(newOps).forEach(key => {
+
+        let newOp = newOps[key];
+        let existOp = this.operators[key];
+
+        // using merge instead of replace if merge is true nad operator exists
+        if (existOp && merge) {
+          this._mergeOperators(existOp, newOp);
+        } else {
+          //otherwise using assign
+          this.operators[key] = newOp;
+        }
+      });
+  }
+
+  _mergeOperators(operator, another) {
+    operator.update(another);
+  }
+
+  // building operrators from object hash
+  _buildOperators(operators) {
+    if (typeof operators !== 'object') return;
+    return Object.keys(operators).reduce((memo, key) => {
+      let raw = operators[key];
+      let operator = this._buildOperator(raw, key);
+      operator && (memo[operator.id] = operator);
+      return memo;
+    }, {});
+  }
+
+  // building SqOperator from object literal
+  _buildOperator(raw, id) {
+    let operator;
+    if (raw instanceof SqOperator) {
+      operator = raw;
+    } else {
+      operator = new SqOperator(raw);
+    }
+    if (operator.id == null && id != null) {
+      operator.id = id;
+    }
+    return operator;
+  }
+
+  getOperator(id) {
+    if (id == null) return;
+    id.id && (id = id.id);
+    return this.operators[id];
+  }
+
+  isOperator(operator) {
+    return this.getOperator(operator) != null;
+  }
+
+  //#endregion
+
   // in case of arrow function the second argument is toStringOptions.referenceWrapper
   referenceToString(value, wrapper) {
     let [left, right] = this.toStringOptions.referenceWrapper;
     return `${left}${value}${right}`;
   }
+
   wrapReferenceValue(value) {
     let [left, right] = this.toStringOptions.referenceWrapper;
     return `${left}${value}${right}`;
   }
+
   unwrapReferenceValue(value) {
     return value.replace(this.toStringOptions.referencePattern, '$1');
   }
+
 
   groupToString(group, options = {}) {
     if (!options.params && this.toStringOptions.parametrized) {
@@ -144,15 +185,6 @@ class SqDialect {
     }
   }
 
-  getOperator(id) {
-    if (id == null) return;
-    id.id && (id = id.id);
-    return this.operators[id];
-  }
-
-  isOperator(operator) {
-    return this.getOperator(operator) != null;
-  }
 }
 
 SqDialect.prototype.parseOptions = {
@@ -170,7 +202,7 @@ SqDialect.prototype.toStringOptions = {
   parameterSign: '$',
   indexedParameterSign: true
 };
-SqDialect.prototype.operators = [
+SqDialect.prototype.defaultOperators = [
   {
     id: 'equal',
     sign: '=',
