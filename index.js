@@ -5,7 +5,7 @@ import SqItem from './SqItem';
 import SqItemValue from './SqItemValue';
 import SqOperator from './SqOperator';
 
-export { tabulate } from './helpers';
+export * from './helpers';
 
 export function sqParse(data, options) {
   return SqGroup.parse(data, options);

@@ -1,12 +1,18 @@
-export function tabulate(text, num) {
+
+// adds indentation to multiline text
+export function tabulate(text, num = 1) {
   if (!text) return text;
   let tabs = '\t'.repeat(num);
   return text.replace(/^(.)/gim, tabs + '$1');
 }
 
+// merges given object with provided other objects
 export function merge(mutated, ...args) {
   if (!args || !args.length) return mutated;
+
+  //if skipUndefined is true then key with undefined values will be ignored
   let skipUndefined = true;
+  // last argument may be boolean for determine behavior for undefined values
   if (typeof args[args.length - 1] !== 'object') {
     skipUndefined = args.pop();
   }
@@ -22,6 +28,7 @@ export function merge(mutated, ...args) {
   return mutated;
 }
 
+// detects if a given argument is a simple value (numbers, strings, date)
 export function isSimpleValue(arg) {
   if (Array.isArray(arg) || typeof arg === 'function') return false;
   if (arg == null || typeof arg !== 'object') return true;
@@ -31,6 +38,8 @@ export function isSimpleValue(arg) {
   return false;
 }
 
+
+// takes first non undefined value from given contexts
 export function pick(key, ...contexts) {
   let value;
   while (contexts.length || value === undefined) {
@@ -40,15 +49,10 @@ export function pick(key, ...contexts) {
   return value;
 }
 
-export function extend(className, protoProps, staticProps) {
+// backbone's extend
+export function extend(protoProps, staticProps) {
   let parent = this;
   let child;
-
-  if (typeof className === 'object') {
-    staticProps = protoProps;
-    protoProps = className;
-    className = void 0;
-  }
 
   // The constructor function for the new subclass is either defined by you
   // (the "constructor" property in your `extend` definition), or defaulted
@@ -56,10 +60,7 @@ export function extend(className, protoProps, staticProps) {
   if (protoProps && protoProps.hasOwnProperty('constructor')) {
     child = protoProps.constructor;
   } else {
-    !className && (className = parent.name + 'Ext');
-    eval( /* eslint-disable-line */
-      `child = function ${className}(){ return parent.apply(this, arguments); }`
-    );
+    child = function() { return parent.apply(this, arguments); }
   }
 
   // Add static properties to the constructor function, if supplied.
