@@ -118,6 +118,8 @@ SqOperator.prototype = {
   filter() { }
 };
 
+SqOperator.extend = extend;
+
 function maybeOperator(arg) {
   return arg == null || arg instanceof SqOperator || typeof arg === 'string';
 }
