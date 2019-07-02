@@ -1,21 +1,26 @@
 import SqOperator from './SqOperator';
-import { tabulate } from './helpers';
+import { tabulate, pick, extend } from './helpers';
 
-class SqDialect {
-  constructor(options = {}) {
+const SqDialect = function(options = {}) {
+  let { operators, operatorsOptions, toStringOptions } = options;
+  // initializing operators
+  this._initializeOperators(operators, operatorsOptions);
 
-    let { operators, operatorsOptions, toStringOptions } = options;
-    // initializing operators
-    this._initializeOperators(operators, operatorsOptions);
+  //initializing toString options
+  this.toStringOptions = Object.assign(
+    {},
+    this.toStringOptions,
+    toStringOptions
+  );
 
-    //initializing toString options
-    this.toStringOptions = Object.assign({}, this.toStringOptions, toStringOptions);
+  //initializing reference pattern
+  this._initializeReferencePattern();
+};
 
-    //initializing reference pattern
-    this._initializeReferencePattern();
+SqDialect.extend = extend;
 
-  }
 
+SqDialect.prototype = {
   _initializeReferencePattern() {
     if (this.toStringOptions.referencePattern instanceof RegExp) {
       return;
@@ -34,7 +39,7 @@ class SqDialect {
     let pattern = new RegExp(`^${left}([^${right}]+)${right}`);
 
     this.toStringOptions.referencePattern = pattern;
-  }
+  },
 
   //#region Operators
 
@@ -50,7 +55,6 @@ class SqDialect {
     let newOps = this._buildOperators(operators);
     newOps &&
       Object.keys(newOps).forEach(key => {
-
         let newOp = newOps[key];
         let existOp = this.operators[key];
 
@@ -62,11 +66,11 @@ class SqDialect {
           this.operators[key] = newOp;
         }
       });
-  }
+  },
 
   _mergeOperators(operator, another) {
     operator.update(another);
-  }
+  },
 
   // building operrators from object hash
   _buildOperators(operators) {
@@ -77,7 +81,7 @@ class SqDialect {
       operator && (memo[operator.id] = operator);
       return memo;
     }, {});
-  }
+  },
 
   // building SqOperator from object literal
   _buildOperator(raw, id) {
@@ -91,17 +95,17 @@ class SqDialect {
       operator.id = id;
     }
     return operator;
-  }
+  },
 
   getOperator(id) {
     if (id == null) return;
     id.id && (id = id.id);
     return this.operators[id];
-  }
+  },
 
   isOperator(operator) {
     return this.getOperator(operator) != null;
-  }
+  },
 
   //#endregion
 
@@ -109,20 +113,20 @@ class SqDialect {
   referenceToString(value, wrapper) {
     let [left, right] = this.toStringOptions.referenceWrapper;
     return `${left}${value}${right}`;
-  }
+  },
 
   wrapReferenceValue(value) {
     let [left, right] = this.toStringOptions.referenceWrapper;
     return `${left}${value}${right}`;
-  }
+  },
 
   unwrapReferenceValue(value) {
     return value.replace(this.toStringOptions.referencePattern, '$1');
-  }
-
+  },
 
   groupToString(group, options = {}) {
-    if (!options.params && this.toStringOptions.parametrized) {
+    let parametrized = pick('parametrized', options, this.toStringOptions);
+    if (!options.params && parametrized) {
       options.params = [];
     }
     if (group.items.length === 0) return '';
@@ -144,7 +148,7 @@ class SqDialect {
     shouldIdent && (text = tabulate(text, 1));
 
     return leftBracet + text + rightBracet;
-  }
+  },
 
   itemToString(item, options) {
     let lopts = Object.assign({}, options, {
@@ -160,7 +164,7 @@ class SqDialect {
       item.right.toString(ropts)
     );
     return res;
-  }
+  },
 
   itemValueToString(qsValue, options = {}) {
     if (qsValue.isRef()) {
@@ -169,7 +173,8 @@ class SqDialect {
       if (options.side == 'left') {
         return qsValue.value.toString();
       } else {
-        if (this.toStringOptions.parametrized) {
+        let parametrized = pick('parametrized', options, this.toStringOptions);
+        if (parametrized) {
           let sign = this.toStringOptions.parameterSign;
           if (this.toStringOptions.indexedParameterSign) {
             let { params = [] } = options;
@@ -183,108 +188,107 @@ class SqDialect {
         }
       }
     }
-  }
+  },
 
-}
 
-SqDialect.prototype.parseOptions = {
-  leftSideAsReference: true
-};
-SqDialect.prototype._regexSpecials = /[.*+?^${}()|[\]\\]/g;
-SqDialect.prototype.toStringOptions = {
-  indentation: true,
-  groupWrapper: ['(', ')'],
-  orSign: 'OR',
-  andSign: 'AND',
-  referenceWrapper: ['[', ']'],
-
-  parametrized: true,
-  parameterSign: '$',
-  indexedParameterSign: true
-};
-SqDialect.prototype.defaultOperators = [
-  {
-    id: 'equal',
-    sign: '=',
-    filter: (a, b) => a == b
+  parseOptions: {
+    leftSideAsReference: true
   },
-  {
-    id: 'notEqual',
-    sign: '!=',
-    filter: (a, b) => a != b
+  _regexSpecials: /[.*+?^${}()|[\]\\]/g,
+  toStringOptions: {
+    indentation: true,
+    groupWrapper: ['(', ')'],
+    orSign: 'OR',
+    andSign: 'AND',
+    referenceWrapper: ['[', ']'],
+    parametrized: true,
+    parameterSign: '$',
+    indexedParameterSign: true
   },
-  {
-    id: 'greater',
-    sign: '>',
-    filter: (a, b) => a > b
-  },
-  {
-    id: 'greaterOrEqual',
-    sign: '>=',
-    filter: (a, b) => a >= b
-  },
-  {
-    id: 'lesser',
-    sign: '<',
-    filter: (a, b) => a < b
-  },
-  {
-    id: 'lesserOrEqual',
-    sign: '<=',
-    filter: (a, b) => a <= b
-  },
-  {
-    id: 'startsWith',
-    sign: 'starts with',
-    filter: (a, b) => (a && a.startsWith && a.startsWith(b)) || false
-  },
-  {
-    id: 'endsWith',
-    sign: 'ends with',
-    filter: (a, b) => (a && a.endsWith && a.endsWith(b)) || false
-  },
-  {
-    id: 'notStartsWith',
-    sign: 'not starts with',
-    filter: (a, b) => (a && a.startsWith && !a.startsWith(b)) || true
-  },
-  {
-    id: 'notEndsWith',
-    sign: 'not ends with',
-    filter: (a, b) => (a && a.endsWith && !a.endsWith(b)) || true
-  },
-  {
-    id: 'contains',
-    sign: 'contains',
-    filter: (a, b) => {
-      return (a && a.includes && a.includes(b)) || false;
+  defaultOperators: [
+    {
+      id: 'equal',
+      sign: '=',
+      filter: (a, b) => a == b
+    },
+    {
+      id: 'notEqual',
+      sign: '!=',
+      filter: (a, b) => a != b
+    },
+    {
+      id: 'greater',
+      sign: '>',
+      filter: (a, b) => a > b
+    },
+    {
+      id: 'greaterOrEqual',
+      sign: '>=',
+      filter: (a, b) => a >= b
+    },
+    {
+      id: 'lesser',
+      sign: '<',
+      filter: (a, b) => a < b
+    },
+    {
+      id: 'lesserOrEqual',
+      sign: '<=',
+      filter: (a, b) => a <= b
+    },
+    {
+      id: 'startsWith',
+      sign: 'starts with',
+      filter: (a, b) => (a && a.startsWith && a.startsWith(b)) || false
+    },
+    {
+      id: 'endsWith',
+      sign: 'ends with',
+      filter: (a, b) => (a && a.endsWith && a.endsWith(b)) || false
+    },
+    {
+      id: 'notStartsWith',
+      sign: 'not starts with',
+      filter: (a, b) => (a && a.startsWith && !a.startsWith(b)) || true
+    },
+    {
+      id: 'notEndsWith',
+      sign: 'not ends with',
+      filter: (a, b) => (a && a.endsWith && !a.endsWith(b)) || true
+    },
+    {
+      id: 'contains',
+      sign: 'contains',
+      filter: (a, b) => {
+        return (a && a.includes && a.includes(b)) || false;
+      }
+    },
+    {
+      id: 'notContains',
+      sign: 'not contains',
+      filter: (a, b) => (a && a.includes && !a.includes(b)) || true
+    },
+    {
+      id: 'in',
+      sign: 'in',
+      filter: (a, b) => (b && b.includes && b.includes(a)) || false
+    },
+    {
+      id: 'notIn',
+      sign: 'not in',
+      filter: (a, b) => (b && b.includes && !b.includes(a)) || true
+    },
+    {
+      id: 'null',
+      sign: 'is null',
+      filter: a => a == null
+    },
+    {
+      id: 'notNull',
+      sign: 'is not null',
+      filter: a => a != null
     }
-  },
-  {
-    id: 'notContains',
-    sign: 'not contains',
-    filter: (a, b) => (a && a.includes && !a.includes(b)) || true
-  },
-  {
-    id: 'in',
-    sign: 'in',
-    filter: (a, b) => (b && b.includes && b.includes(a)) || false
-  },
-  {
-    id: 'notIn',
-    sign: 'not in',
-    filter: (a, b) => (b && b.includes && !b.includes(a)) || true
-  },
-  {
-    id: 'null',
-    sign: 'is null',
-    filter: a => a == null
-  },
-  {
-    id: 'notNull',
-    sign: 'is not null',
-    filter: a => a != null
-  }
-];
+  ]
+}
 
 export default SqDialect;

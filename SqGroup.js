@@ -1,15 +1,17 @@
 import SqItem from './SqItem';
 import config from './config';
+import { extend } from './helpers';
 
-class SqGroup {
-  constructor(val, options = {}) {
-    if (!Array.isArray(val)) {
-      throw new Error('First argument must be an array or object');
-    }
-    this.options = this._normalizeOptions(options);
-    this.isAny = this.options.isAny;
-    this.items = this._normalizeItems(val);
+const SqGroup = function(val, options = {}) {
+  if (!Array.isArray(val)) {
+    throw new Error('First argument must be an array or object');
   }
+  this.options = this._normalizeOptions(options);
+  this.isAny = this.options.isAny;
+  this.items = this._normalizeItems(val);
+}
+
+SqGroup.prototype = {
 
   _normalizeIsAny(values) {
     let { anyWord, everyWord, isAny } = this.options;
@@ -19,7 +21,8 @@ class SqGroup {
       return false;
     }
     return isAny;
-  }
+  },
+
   _normalizeOptions(options = {}) {
     let {
       isAny = config.defaultIsAny,
@@ -29,7 +32,7 @@ class SqGroup {
     } = options;
     let word = isAny ? anyWord : everyWord;
     return { isAny, word, anyWord, everyWord, dialect };
-  }
+  },
 
   _normalizeItems(values) {
     if (values == null || typeof values !== 'object') return [];
@@ -56,7 +59,7 @@ class SqGroup {
     }
 
     return result;
-  }
+  },
 
   _normalizeItem(raw) {
     let sqitem = SqItem.parse(raw, this.options);
@@ -67,11 +70,11 @@ class SqGroup {
     if (sqgroup) {
       return sqgroup;
     }
-  }
+  },
 
   getDialect() {
     return this.options.dialect;
-  }
+  },
 
   toJSON() {
     let { anyWord, everyWord } = this.options;
@@ -90,7 +93,7 @@ class SqGroup {
         };
       }
     }
-  }
+  },
 
   toString(options = {}) {
     let dialect = options.dialect || this.getDialect();
@@ -99,14 +102,14 @@ class SqGroup {
     } else {
       return JSON.stringify(this, null, '\t');
     }
-  }
+  },
 
   toSql(options = {}) {
     !options.params && (options.params = []);
     let values = options.params;
     let text = this.toString(options);
     return { text, values };
-  }
+  },
 
   filter(model, options) {
     let result = false;
@@ -118,7 +121,7 @@ class SqGroup {
       }
     }
     return result;
-  }
+  },
 
   _join(arg, isAny) {
     if (this.isAny === isAny) {
@@ -128,71 +131,76 @@ class SqGroup {
       let opts = Object.assign({}, this.options, { isAny });
       return SqGroup.parse([arg, this], opts);
     }
-  }
+  },
 
   or(arg) {
     return this._join(arg, true);
-  }
+  },
+
   and(arg) {
     return this._join(arg, false);
+  },
+
+}
+
+SqGroup.extend = extend;
+
+SqGroup.parse = function(val, options = {}) {
+  let { dialect = config.defaultDialect } = options;
+  //console.log('dialect', dialect);
+  if (val instanceof SqGroup || val == null) return val;
+  if (typeof val !== 'object') return;
+
+  if (val instanceof SqItem) {
+    return new SqGroup([val], options);
   }
 
-  static parse(val, options = {}) {
-    let { dialect = config.defaultDialect } = options;
-    //console.log('dialect', dialect);
-    if (val instanceof SqGroup || val == null) return val;
-    if (typeof val !== 'object') return;
+  let sqitem = SqItem.parse(val, options);
+  if (sqitem) {
+    return new SqGroup([val], options);
+  }
 
-    if (val instanceof SqItem) {
-      return new SqGroup([val], options);
-    }
-
-    let sqitem = SqItem.parse(val, options);
-    if (sqitem) {
-      return new SqGroup([val], options);
-    }
-
-    if (Array.isArray(val)) {
-      try {
-        return new SqGroup(val, options);
-      } catch (e) {
-        return;
-      }
-    }
-
-    let keys = Object.keys(val);
-    let { anyWord = config.anyWord, everyWord = config.everyWord } = options;
-    let arr = val[anyWord] || val[everyWord];
-    if (keys.length === 1 && arr) {
-      let opts = Object.assign({}, options, { isAny: !!val[anyWord] });
-      return SqGroup.parse(arr, opts);
-    }
-
-    arr = keys.map(key => {
-      let value = val[key];
-      if (dialect.parseOptions.leftSideAsReference) {
-        key = dialect.wrapReferenceValue(key);
-      }
-      return [key, value];
-    });
+  if (Array.isArray(val)) {
     try {
-      return new SqGroup(arr, options);
+      return new SqGroup(val, options);
     } catch (e) {
       return;
     }
   }
 
-  static filter(data, options = {}) {
-    let sq = this.parse(data, options);
-    if (!sq) {
-      if (options.throwError !== false) {
-        return () => true;
-      } else {
-        throw new Error('Unable to parse SqGroup from provided data');
-      }
+  let keys = Object.keys(val);
+  let { anyWord = config.anyWord, everyWord = config.everyWord } = options;
+  let arr = val[anyWord] || val[everyWord];
+  if (keys.length === 1 && arr) {
+    let opts = Object.assign({}, options, { isAny: !!val[anyWord] });
+    return SqGroup.parse(arr, opts);
+  }
+
+  arr = keys.map(key => {
+    let value = val[key];
+    if (dialect.parseOptions.leftSideAsReference) {
+      key = dialect.wrapReferenceValue(key);
     }
-    return model => sq.filter(model, options.filterOptions);
+    return [key, value];
+  });
+  try {
+    return new SqGroup(arr, options);
+  } catch (e) {
+    return;
   }
 }
+
+SqGroup.filter = function(data, options = {}) {
+  let sq = this.parse(data, options);
+  if (!sq) {
+    if (options.throwError !== false) {
+      return () => true;
+    } else {
+      throw new Error('Unable to parse SqGroup from provided data');
+    }
+  }
+  return model => sq.filter(model, options.filterOptions);
+}
+
 
 export default SqGroup;

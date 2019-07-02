@@ -30,3 +30,50 @@ export function isSimpleValue(arg) {
   }
   return false;
 }
+
+export function pick(key, ...contexts) {
+  let value;
+  while (contexts.length || value === undefined) {
+    let context = contexts.shift() || {};
+    context && (value = context[key]);
+  }
+  return value;
+}
+
+export function extend(className, protoProps, staticProps) {
+  let parent = this;
+  let child;
+
+  if (typeof className === 'object') {
+    staticProps = protoProps;
+    protoProps = className;
+    className = void 0;
+  }
+
+  // The constructor function for the new subclass is either defined by you
+  // (the "constructor" property in your `extend` definition), or defaulted
+  // by us to simply call the parent constructor.
+  if (protoProps && protoProps.hasOwnProperty('constructor')) {
+    child = protoProps.constructor;
+  } else {
+    !className && (className = parent.name + 'Ext');
+    eval( /* eslint-disable-line */
+      `child = function ${className}(){ return parent.apply(this, arguments); }`
+    );
+  }
+
+  // Add static properties to the constructor function, if supplied.
+  Object.assign(child, parent, staticProps);
+
+  // Set the prototype chain to inherit from `parent`, without calling
+  // `parent`'s constructor function and add the prototype properties.
+
+  child.prototype = Object.assign(Object.create(parent.prototype), protoProps);
+  child.prototype.constructor = child;
+
+  // Set a convenience property in case the parent's prototype is needed
+  // later.
+  child.__super__ = parent.prototype;
+
+  return child;
+}
