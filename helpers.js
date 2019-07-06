@@ -74,7 +74,10 @@ export function extend(protoProps, staticProps) {
 
   // Set a convenience property in case the parent's prototype is needed
   // later.
-  child.__super__ = parent.prototype;
+  Object.defineProperty(child, '__super__', {
+    writable: false, enumerable: false,
+    value: parent.prototype
+  });
 
   return child;
 }
